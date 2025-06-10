@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, ttk
 import pandas as pd
 
+df_original = pd.DataFrame()
 df_adjusted = pd.DataFrame()
 
 def adjust_prices(row):
@@ -99,32 +100,29 @@ def update_table_and_totals(df):
     totals_store_total.config(text=f"My Store Total: ${store_total:,.2f}")
 
 def load_csv():
-    global df_adjusted
+    global df_original, df_adjusted
     file_path = filedialog.askopenfilename(filetypes=[("CSV files", "*.csv")])
     if not file_path:
         return
 
     df = pd.read_csv(file_path)
-
     for col in ['Add to Quantity', 'Total Quantity', 'TCG Market Price', 'TCG Low Price', 'TCG Marketplace Price', 'My Store Price']:
         df[col] = pd.to_numeric(df.get(col, 0), errors='coerce').fillna(0)
 
-    df = df.apply(adjust_prices, axis=1)
-    df_adjusted = df
-
+    df_original = df.copy()
+    df_adjusted = df_original.apply(adjust_prices, axis=1)
     update_table_and_totals(df_adjusted)
 
 def recalc_prices():
     global df_adjusted
-    if df_adjusted.empty:
+    if df_original.empty:
         return
-    df_adjusted = df_adjusted.apply(adjust_prices, axis=1)
+    df_adjusted = df_original.copy().apply(adjust_prices, axis=1)
     update_table_and_totals(df_adjusted)
 
 def export_csv():
     if df_adjusted.empty:
         return
-
     export_df = df_adjusted[['TCGplayer Id', 'TCG Marketplace Price', 'My Store Price', 'Add to Quantity', 'Base Price Source']].copy()
     if reprice_only_var.get():
         export_df['Add to Quantity'] = 0
@@ -193,6 +191,7 @@ totals_inner = tk.Frame(totals_frame)
 totals_inner.pack()
 
 for widget in [
+    tk.Label(totals_inner, text="Total Sales Value", font=('Arial', 10, 'bold')),
     tk.Label(totals_inner, text="(Based on Add to Quantity)", font=('Arial', 9, 'italic')),
     (totals_market_add := tk.Label(totals_inner, text="Market Total: $0.00")),
     (totals_marketplace_add := tk.Label(totals_inner, text="Marketplace Total: $0.00")),
@@ -233,5 +232,3 @@ tree_scroll_y.config(command=tree.yview)
 tree_scroll_x.config(command=tree.xview)
 
 root.mainloop()
-
-
