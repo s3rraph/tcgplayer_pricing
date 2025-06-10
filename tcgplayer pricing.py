@@ -1,4 +1,4 @@
-# main.py
+# tcgplayer pricing.py
 import tkinter as tk
 from ui_elements import build_ui
 

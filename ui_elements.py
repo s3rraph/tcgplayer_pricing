@@ -29,6 +29,12 @@ def recalc_prices():
         lambda row: adjust_prices(row, state), axis=1)
     update_table_and_totals(state)
 
+def bind_entry(entry):
+    entry.bind("<KeyRelease>", lambda e: recalc_prices())
+
+def bind_checkbox(var):
+    var.trace_add("write", lambda *_: recalc_prices())
+
 def build_ui(root):
     frame = tk.Frame(root)
     frame.pack(expand=False, anchor='n')
@@ -43,6 +49,7 @@ def build_ui(root):
         entry = tk.Entry(parent)
         entry.insert(0, default)
         entry.pack(pady=2, anchor='w')
+        bind_entry(entry)
         return entry
 
     controls_frame = tk.Frame(center_frame)
@@ -66,9 +73,17 @@ def build_ui(root):
     totals_frame.pack(side=tk.LEFT, padx=20, anchor='n')
     totals_inner = tk.Frame(totals_frame)
     totals_inner.pack()
-    for key in [
-        "totals_market_add", "totals_marketplace_add", "totals_store_add",
-        "totals_market_total", "totals_marketplace_total", "totals_store_total"]:
+
+    tk.Label(totals_inner, text="(Based on Add to Quantity)", font=('Arial', 9, 'italic')).pack(pady=2, anchor='w')
+
+    for key in ["totals_market_add", "totals_marketplace_add", "totals_store_add"]:
+        lbl = tk.Label(totals_inner, text="Market Total: $0.00")
+        lbl.pack(pady=2, anchor='w')
+        state['totals_labels'][key] = lbl
+
+    tk.Label(totals_inner, text="(Based on Total Quantity)", font=('Arial', 9, 'italic')).pack(pady=2, anchor='w')
+
+    for key in ["totals_market_total", "totals_marketplace_total", "totals_store_total"]:
         lbl = tk.Label(totals_inner, text="Market Total: $0.00")
         lbl.pack(pady=2, anchor='w')
         state['totals_labels'][key] = lbl
@@ -78,11 +93,12 @@ def build_ui(root):
     buttons_inner = tk.Frame(buttons_frame)
     buttons_inner.pack()
     tk.Button(buttons_inner, text="Load CSV", command=lambda: load_csv(state)).pack(pady=4, anchor='w')
-    tk.Button(buttons_inner, text="Recalculate Prices", command=recalc_prices).pack(pady=4, anchor='w')
     tk.Button(buttons_inner, text="Export Adjusted CSV", command=lambda: export_csv(state)).pack(pady=4, anchor='w')
 
     state['reprice_only_var'] = tk.BooleanVar(value=True)
     state['allow_lower_var'] = tk.BooleanVar(value=False)
+    bind_checkbox(state['reprice_only_var'])
+    bind_checkbox(state['allow_lower_var'])
     tk.Checkbutton(buttons_inner, text="Reprice Only (Set Add to Quantity to 0)", variable=state['reprice_only_var']).pack(pady=4, anchor='w')
     tk.Checkbutton(buttons_inner, text="Allow Lower Prices", variable=state['allow_lower_var']).pack(pady=4, anchor='w')
 

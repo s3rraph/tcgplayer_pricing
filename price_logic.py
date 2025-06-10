@@ -1,6 +1,13 @@
 # price_logic.py
 import pandas as pd
 
+def safe_float(entry):
+    try:
+        value = entry.get()
+        return float(value) if value.strip() else 0.0
+    except:
+        return 0.0
+
 def adjust_prices(row, state):
     try:
         market_price = row['TCG Market Price']
@@ -17,10 +24,10 @@ def adjust_prices(row, state):
             else:
                 row['Base Price Source'] = ""
 
-            mp_percent = float(state['marketplace_percent'].get()) / 100.0
-            mp_floor = float(state['marketplace_floor'].get())
-            store_percent_val = float(state['store_percent'].get()) / 100.0
-            store_floor_val = float(state['store_floor'].get())
+            mp_percent = safe_float(state['marketplace_percent']) / 100.0
+            mp_floor = safe_float(state['marketplace_floor'])
+            store_percent_val = safe_float(state['store_percent']) / 100.0
+            store_floor_val = safe_float(state['store_floor'])
 
             quantity = row.get('Total Quantity', 0)
             try:
@@ -29,11 +36,11 @@ def adjust_prices(row, state):
                 quantity = 0
 
             if quantity >= 8:
-                scaler = float(state['scaler_8plus'].get()) / 100.0
+                scaler = safe_float(state['scaler_8plus']) / 100.0
             elif quantity >= 4:
-                scaler = float(state['scaler_4_7'].get()) / 100.0
+                scaler = safe_float(state['scaler_4_7']) / 100.0
             elif quantity >= 2:
-                scaler = float(state['scaler_2_3'].get()) / 100.0
+                scaler = safe_float(state['scaler_2_3']) / 100.0
             else:
                 scaler = 0.0
 
