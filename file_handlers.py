@@ -28,7 +28,10 @@ def load_csv(state):
 
     df = pd.read_csv(file_path)
     for col in ['Add to Quantity', 'Total Quantity', 'TCG Market Price', 'TCG Low Price', 'TCG Marketplace Price', 'My Store Price']:
-        df[col] = pd.to_numeric(df.get(col, 0), errors='coerce').fillna(0)
+        if col in df.columns:
+          df[col] = pd.to_numeric(df.get(col, 0), errors='coerce').fillna(0)
+    else:
+        df[col] = 0
 
     state['df_original'] = df.copy()
     state['df_adjusted'] = state['df_original'].apply(lambda row: adjust_prices(row, state), axis=1)
@@ -39,7 +42,7 @@ def export_csv(state):
         return
 
     include_store_price = state.get('include_store_price_var', None)
-    columns = ['TCGplayer Id', 'TCG Marketplace Price', 'Add to Quantity', 'Base Price Source']
+    columns = ['TCGplayer Id', 'TCG Marketplace Price', 'Add to Quantity']
     if include_store_price and include_store_price.get():
         columns.insert(2, 'My Store Price')
 
