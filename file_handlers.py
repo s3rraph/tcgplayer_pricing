@@ -18,7 +18,9 @@ DEFAULT_VALUES = {
     "scaler_8plus": "10",
     "reprice_only_var": True,
     "allow_lower_var": False,
-    "include_store_price_var": True
+    "include_store_price_var": True,
+    "hide_mtg_singles_var": False,
+    "unhide_mtg_singles_var": False
 }
 
 def load_csv(state):
@@ -33,6 +35,14 @@ def load_csv(state):
     else:
         df[col] = 0
 
+    # Ensure columns needed for hide MtG singles feature exist
+    if 'Product Line' not in df.columns:
+        df['Product Line'] = ''
+    if 'Condition' not in df.columns:
+        df['Condition'] = ''
+    if 'My Store Reserve Quantity' not in df.columns:
+        df['My Store Reserve Quantity'] = 0
+
     state['df_original'] = df.copy()
     state['df_adjusted'] = state['df_original'].apply(lambda row: adjust_prices(row, state), axis=1)
     update_table_and_totals(state)
@@ -42,6 +52,9 @@ def export_csv(state):
         return
 
     include_store_price = state.get('include_store_price_var', None)
+    hide_mtg_singles = state.get('hide_mtg_singles_var', None)
+    unhide_mtg_singles = state.get('unhide_mtg_singles_var', None)
+
     columns = ['TCGplayer Id', 'TCG Marketplace Price', 'Add to Quantity']
     if include_store_price and include_store_price.get():
         columns.insert(2, 'My Store Price')
@@ -49,6 +62,27 @@ def export_csv(state):
     export_df = state['df_adjusted'][columns].copy()
     if state['reprice_only_var'].get():
         export_df['Add to Quantity'] = 0
+
+    # Handle My Store Reserve Quantity for Magic cards
+    def get_reserve_quantity(row):
+        is_magic_single = (row.get('Product Line', '') == 'Magic' and
+                          row.get('Condition', '') != 'Unopened')
+
+        if not is_magic_single:
+            return 0
+
+        # If unhide is checked, set to 0
+        if unhide_mtg_singles and unhide_mtg_singles.get():
+            return 0
+
+        # If hide is checked, set to 10000
+        if hide_mtg_singles and hide_mtg_singles.get():
+            return 10000
+
+        # Otherwise, pass through original value
+        return row.get('My Store Reserve Quantity', 0)
+
+    export_df['My Store Reserve Quantity'] = state['df_adjusted'].apply(get_reserve_quantity, axis=1)
 
     file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
     if file_path:
@@ -65,7 +99,9 @@ def save_state_to_db(state):
         "scaler_8plus": state['scaler_8plus'].get(),
         "reprice_only_var": state['reprice_only_var'].get(),
         "allow_lower_var": state['allow_lower_var'].get(),
-        "include_store_price_var": state['include_store_price_var'].get()
+        "include_store_price_var": state['include_store_price_var'].get(),
+        "hide_mtg_singles_var": state['hide_mtg_singles_var'].get(),
+        "unhide_mtg_singles_var": state['unhide_mtg_singles_var'].get()
     }
     with open(DB_PATH, 'w') as f:
         json.dump(data, f)

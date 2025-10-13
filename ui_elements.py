@@ -19,6 +19,8 @@ state = {
     'allow_lower_var': None,
     'reprice_only_var': None,
     'include_store_price_var': None,
+    'hide_mtg_singles_var': None,
+    'unhide_mtg_singles_var': None,
     'tree': None,
     'totals_labels': {}
 }
@@ -38,6 +40,21 @@ def bind_entry(entry):
 
 def bind_checkbox(var):
     var.trace_add("write", lambda *_: recalc_prices())
+
+def make_mutually_exclusive(var1, var2):
+    """Make two checkboxes mutually exclusive"""
+    def on_var1_change(*_):
+        if var1.get():
+            var2.set(False)
+        recalc_prices()
+
+    def on_var2_change(*_):
+        if var2.get():
+            var1.set(False)
+        recalc_prices()
+
+    var1.trace_add("write", on_var1_change)
+    var2.trace_add("write", on_var2_change)
 
 def build_ui(root):
     frame = tk.Frame(root)
@@ -100,12 +117,17 @@ def build_ui(root):
     state['reprice_only_var'] = tk.BooleanVar(value=config_values.get('reprice_only_var', True))
     state['allow_lower_var'] = tk.BooleanVar(value=config_values.get('allow_lower_var', False))
     state['include_store_price_var'] = tk.BooleanVar(value=config_values.get('include_store_price_var', True))
+    state['hide_mtg_singles_var'] = tk.BooleanVar(value=config_values.get('hide_mtg_singles_var', False))
+    state['unhide_mtg_singles_var'] = tk.BooleanVar(value=config_values.get('unhide_mtg_singles_var', False))
     bind_checkbox(state['reprice_only_var'])
     bind_checkbox(state['allow_lower_var'])
     bind_checkbox(state['include_store_price_var'])
+    make_mutually_exclusive(state['hide_mtg_singles_var'], state['unhide_mtg_singles_var'])
     tk.Checkbutton(buttons_inner, text="Reprice Only (Set Add to Quantity to 0)", variable=state['reprice_only_var']).pack(pady=4, anchor='w')
     tk.Checkbutton(buttons_inner, text="Allow Lower Prices", variable=state['allow_lower_var']).pack(pady=4, anchor='w')
     tk.Checkbutton(buttons_inner, text="Include My Store Price in Export", variable=state['include_store_price_var']).pack(pady=4, anchor='w')
+    tk.Checkbutton(buttons_inner, text="Hide MtG Singles", variable=state['hide_mtg_singles_var']).pack(pady=4, anchor='w')
+    tk.Checkbutton(buttons_inner, text="Unhide MtG Singles", variable=state['unhide_mtg_singles_var']).pack(pady=4, anchor='w')
 
     tree_frame = tk.Frame(root)
     tree_frame.pack(fill=tk.BOTH, expand=True)
