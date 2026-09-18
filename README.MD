@@ -11,8 +11,16 @@ It's designed around working with the export/import CSV files from the Pricing t
   - Floor price enforcement
 - Export an adjustment CSV that can be loaded back into TCGPlayer
 
+## Install
+Download `TCGPriceAdjuster-Setup-*.exe` from the [latest release](https://github.com/s3rraph/tcgplayer_pricing/releases/latest) and run it. The installer bundles its own Python and dependencies, installs per-user (no admin), and works offline.
+
+## Building the installer
+Pushing a `v*` tag (e.g. `v1.0.0`) runs `.github/workflows/build.yml`, which stages the bundle with `package.ps1` and compiles `installer.iss` with Inno Setup. Tag builds publish a GitHub Release with the installer attached; manual runs publish it as a workflow artifact.
+
+To build locally: `./package.ps1 -PythonDir C:\Python313`, then `iscc installer.iss`.
+
 ## Usage
-1. Run the application using Python: `py tcgplayer_pricing.py`
+1. Run the installed app, or from source using Python: `py tcgplayer_pricing.py`
 2. Use the input fields to set your pricing rules
 3. Load an export CSV file containing your card data
 4. The table will update with calculated prices

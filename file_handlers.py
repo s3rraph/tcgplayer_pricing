@@ -6,7 +6,9 @@ import pandas as pd
 from price_logic import adjust_prices
 from table_update import update_table_and_totals
 
-DB_PATH = "database"
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(APP_DIR, "settings.json")
+LEGACY_DB_PATH = os.path.join(APP_DIR, "database")  # pre-rename settings file
 
 DEFAULT_VALUES = {
     "marketplace_percent": "10",
@@ -107,6 +109,9 @@ def save_state_to_db(state):
         json.dump(data, f)
 
 def load_state_from_db():
+    if not os.path.exists(DB_PATH) and os.path.exists(LEGACY_DB_PATH):
+        os.replace(LEGACY_DB_PATH, DB_PATH)
+
     if not os.path.exists(DB_PATH):
         with open(DB_PATH, 'w') as f:
             json.dump(DEFAULT_VALUES, f)
